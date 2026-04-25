@@ -173,5 +173,4 @@ DailyDiff/
 
 ---
 
-*Built for the Bolt Product Builder Programme — April 2026.*  
-*Built in a day as a real tool I actually use.*
+*Built in a day. Used every day.*
