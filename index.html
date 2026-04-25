@@ -1,0 +1,995 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DailyDiff</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:         #0d0d0d;
+      --bg-card:    #111111;
+      --bg-card-hv: #161616;
+      --border:     #1e1e1e;
+      --border-hv:  #2a2a2a;
+      --text:       #e2e2e2;
+      --muted:      #555;
+      --dim:        #2e2e2e;
+      --accent:     #6ee7b7;
+      --radius:     8px;
+      --mono: 'JetBrains Mono', 'Fira Code', 'SF Mono', monospace;
+      --ui:   -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', system-ui, sans-serif;
+    }
+
+    html { font-size: 16px; scroll-behavior: smooth; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--ui);
+      line-height: 1.6;
+      min-height: 100vh;
+    }
+
+    .wrap {
+      max-width: 700px;
+      margin: 0 auto;
+      padding: 0 24px;
+    }
+
+    /* ── TOP BAR ─────────────────────────────────── */
+
+    .topbar {
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      background: rgba(13,13,13,0.96);
+      backdrop-filter: blur(14px);
+      border-bottom: 1px solid var(--border);
+      padding: 18px 0 14px;
+    }
+
+    .topbar-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-shrink: 0;
+    }
+
+    .app-name {
+      font-family: var(--mono);
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--accent);
+      letter-spacing: -0.02em;
+    }
+
+    .settings-btn {
+      background: none;
+      border: none;
+      color: var(--muted);
+      cursor: pointer;
+      font-size: 0.85rem;
+      padding: 4px 5px;
+      border-radius: 4px;
+      transition: color 0.15s;
+      line-height: 1;
+    }
+    .settings-btn:hover { color: var(--text); }
+
+    .focus-input {
+      flex: 1;
+      min-width: 0;
+      background: transparent;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      color: var(--text);
+      font-family: var(--ui);
+      font-size: 0.82rem;
+      outline: none;
+      padding: 8px 12px;
+      transition: border-color 0.15s;
+    }
+    .focus-input::placeholder { color: var(--muted); }
+    .focus-input:focus { border-color: var(--accent); }
+
+    .api-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 10px;
+      padding-top: 10px;
+      border-top: 1px solid var(--border);
+    }
+
+    .api-label {
+      font-family: var(--mono);
+      font-size: 0.68rem;
+      color: var(--muted);
+      flex-shrink: 0;
+      letter-spacing: 0.04em;
+    }
+
+    .api-input {
+      flex: 1;
+      min-width: 0;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      color: var(--text);
+      font-family: var(--mono);
+      font-size: 0.78rem;
+      outline: none;
+      padding: 7px 10px;
+      transition: border-color 0.15s;
+    }
+    .api-input:focus { border-color: var(--accent); }
+
+    .btn-save {
+      background: var(--accent);
+      border: none;
+      border-radius: 6px;
+      color: #000;
+      cursor: pointer;
+      font-family: var(--mono);
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+      padding: 7px 14px;
+      flex-shrink: 0;
+      transition: opacity 0.15s;
+    }
+    .btn-save:hover { opacity: 0.82; }
+
+    .streaks {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 14px;
+      margin-top: 10px;
+      min-height: 20px;
+    }
+
+    .streak {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+    .streak-emoji { font-size: 0.8rem; }
+    .streak-label {
+      font-family: var(--mono);
+      font-size: 0.68rem;
+    }
+    .streak-count {
+      font-family: var(--mono);
+      font-size: 0.68rem;
+      color: var(--muted);
+    }
+
+    /* ── ENTRY INPUT ─────────────────────────────── */
+
+    .entry-section { padding: 28px 0 24px; }
+
+    .section-label {
+      display: block;
+      font-family: var(--mono);
+      font-size: 0.68rem;
+      color: var(--muted);
+      letter-spacing: 0.07em;
+      margin-bottom: 10px;
+    }
+
+    .entry-textarea {
+      display: block;
+      width: 100%;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      color: var(--text);
+      font-family: var(--ui);
+      font-size: 0.9rem;
+      line-height: 1.75;
+      min-height: 130px;
+      outline: none;
+      padding: 16px;
+      resize: vertical;
+      transition: border-color 0.15s;
+    }
+    .entry-textarea::placeholder { color: var(--dim); }
+    .entry-textarea:focus { border-color: var(--accent); }
+
+    .push-btn {
+      display: block;
+      width: 100%;
+      margin-top: 10px;
+      background: var(--accent);
+      border: none;
+      border-radius: var(--radius);
+      color: #000;
+      cursor: pointer;
+      font-family: var(--ui);
+      font-size: 0.9rem;
+      font-weight: 600;
+      letter-spacing: 0.01em;
+      padding: 13px;
+      transition: opacity 0.15s, transform 0.1s;
+    }
+    .push-btn:hover:not(:disabled) { opacity: 0.85; }
+    .push-btn:active:not(:disabled) { transform: scale(0.99); }
+    .push-btn:disabled { cursor: not-allowed; opacity: 0.4; }
+
+    @keyframes shake {
+      0%,100% { transform: translateX(0); }
+      20%      { transform: translateX(-6px); }
+      40%      { transform: translateX(6px); }
+      60%      { transform: translateX(-3px); }
+      80%      { transform: translateX(3px); }
+    }
+    .shake { animation: shake 0.35s ease; }
+
+    /* ── TIMELINE ────────────────────────────────── */
+
+    .tl-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding-bottom: 14px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .tl-title {
+      font-family: var(--mono);
+      font-size: 0.68rem;
+      color: var(--muted);
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .entry-count {
+      font-family: var(--mono);
+      font-size: 0.65rem;
+      color: #333;
+    }
+
+    .timeline {
+      padding: 16px 0 60px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    /* ── ENTRY CARD ──────────────────────────────── */
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(10px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .entry-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+      padding: 16px 18px;
+      animation: fadeUp 0.28s ease both;
+      transition: border-color 0.2s, background 0.2s;
+    }
+    .entry-card:hover {
+      border-color: var(--border-hv);
+      background: var(--bg-card-hv);
+    }
+    .entry-card.hl {
+      border-color: var(--accent) !important;
+      transition: border-color 0.08s;
+    }
+
+    .card-meta {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 9px;
+    }
+
+    .card-version {
+      font-family: var(--mono);
+      font-size: 0.78rem;
+      font-weight: 600;
+      color: var(--accent);
+    }
+
+    .card-date {
+      font-family: var(--mono);
+      font-size: 0.67rem;
+      color: #404040;
+    }
+
+    .card-summary {
+      font-size: 0.88rem;
+      color: var(--text);
+      line-height: 1.55;
+      margin-bottom: 11px;
+    }
+
+    .card-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 5px;
+      margin-bottom: 11px;
+    }
+
+    .tag {
+      border-radius: 4px;
+      font-family: var(--mono);
+      font-size: 0.65rem;
+      font-weight: 500;
+      letter-spacing: 0.03em;
+      padding: 3px 7px;
+    }
+
+    .drift-row {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      margin-bottom: 12px;
+    }
+
+    .drift-state {
+      font-family: var(--mono);
+      font-size: 0.63rem;
+      color: #3a3a3a;
+      width: 54px;
+      flex-shrink: 0;
+    }
+
+    .drift-track {
+      flex: 1;
+      height: 2px;
+      background: #1c1c1c;
+      border-radius: 2px;
+      overflow: hidden;
+    }
+
+    .drift-fill {
+      height: 100%;
+      border-radius: 2px;
+      transition: width 0.6s ease;
+    }
+
+    .drift-num {
+      font-family: var(--mono);
+      font-size: 0.63rem;
+      color: #3a3a3a;
+      width: 24px;
+      text-align: right;
+      flex-shrink: 0;
+    }
+
+    .changelog { margin-bottom: 11px; }
+
+    .cl-item {
+      display: flex;
+      gap: 8px;
+      font-size: 0.82rem;
+      color: #5a5a5a;
+      line-height: 1.5;
+      padding: 2px 0;
+    }
+
+    .cl-plus {
+      font-family: var(--mono);
+      font-size: 0.75rem;
+      color: var(--accent);
+      flex-shrink: 0;
+      margin-top: 1px;
+    }
+
+    .card-connections {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      padding-top: 10px;
+      border-top: 1px solid var(--border);
+    }
+
+    .conn-link {
+      font-family: var(--mono);
+      font-size: 0.67rem;
+      color: #404040;
+      cursor: pointer;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      transition: color 0.15s;
+    }
+    .conn-link:hover { color: var(--accent); }
+
+    /* ── TOAST ───────────────────────────────────── */
+
+    .toast {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      background: #181818;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      color: var(--text);
+      font-size: 0.82rem;
+      max-width: 280px;
+      opacity: 0;
+      padding: 11px 16px;
+      pointer-events: none;
+      transform: translateY(6px);
+      transition: opacity 0.18s, transform 0.18s;
+      z-index: 200;
+    }
+    .toast.err  { border-color: #f87171; color: #f87171; }
+    .toast.show { opacity: 1; transform: translateY(0); }
+
+    /* ── EMPTY ───────────────────────────────────── */
+
+    .empty {
+      text-align: center;
+      padding: 48px 20px;
+      color: var(--dim);
+      font-family: var(--mono);
+      font-size: 0.8rem;
+    }
+
+    /* ── RESPONSIVE ──────────────────────────────── */
+
+    @media (max-width: 500px) {
+      .wrap { padding: 0 16px; }
+      .topbar-row { flex-direction: column; align-items: stretch; }
+      .brand { justify-content: space-between; }
+      .api-row { flex-wrap: wrap; }
+      .api-input { min-width: 0; flex: 1 1 160px; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="wrap">
+
+  <!-- TOP BAR -->
+  <header class="topbar">
+    <div class="topbar-row">
+      <div class="brand">
+        <span class="app-name">DailyDiff</span>
+        <button class="settings-btn" id="settingsToggle" title="API settings">⚙</button>
+      </div>
+      <input
+        type="text"
+        class="focus-input"
+        id="weeklyFocus"
+        placeholder="This week I'm focused on..."
+        maxlength="140"
+      />
+    </div>
+
+    <div class="api-row" id="apiRow" style="display:none">
+      <span class="api-label">api key</span>
+      <input
+        type="password"
+        class="api-input"
+        id="apiKeyInput"
+        placeholder="sk-ant-api..."
+        autocomplete="off"
+        spellcheck="false"
+      />
+      <button class="btn-save" id="saveApiKey">save</button>
+    </div>
+
+    <div class="streaks" id="streaks"></div>
+  </header>
+
+  <main>
+    <!-- ENTRY INPUT -->
+    <section class="entry-section">
+      <span class="section-label">// today's entry</span>
+      <textarea
+        class="entry-textarea"
+        id="entryText"
+        placeholder="Spent the morning reading about distributed systems, specifically the Dynamo paper. Felt foggy but pushed through. Built a small CLI tool in the afternoon to automate some repetitive work. Had a good 1:1 with my manager about the upcoming project scope."
+      ></textarea>
+      <button class="push-btn" id="pushBtn">Push today →</button>
+    </section>
+
+    <!-- TIMELINE -->
+    <section>
+      <div class="tl-header">
+        <span class="tl-title">// changelog</span>
+        <span class="entry-count" id="entryCount"></span>
+      </div>
+      <div class="timeline" id="timeline"></div>
+    </section>
+  </main>
+
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+'use strict';
+
+// ═══════════════════════════════════════════════════════
+// CONSTANTS
+// ═══════════════════════════════════════════════════════
+
+const SK = {
+  ENTRIES: 'dd_entries',
+  FOCUS:   'dd_focus',
+  API_KEY: 'dd_apikey'
+};
+
+const CLAUDE = {
+  ENDPOINT:    'https://api.anthropic.com/v1/messages',
+  MODEL:       'claude-sonnet-4-6',
+  MAX_TOKENS:  1000,
+  API_VERSION: '2023-06-01'
+};
+
+const TAGS = {
+  learning: { color: '#60a5fa', bg: 'rgba(96,165,250,0.1)',   emoji: '📚' },
+  building: { color: '#6ee7b7', bg: 'rgba(110,231,183,0.1)',  emoji: '⚡' },
+  social:   { color: '#f472b6', bg: 'rgba(244,114,182,0.1)',  emoji: '💬' },
+  health:   { color: '#4ade80', bg: 'rgba(74,222,128,0.1)',   emoji: '🌿' },
+  blocked:  { color: '#f87171', bg: 'rgba(248,113,113,0.1)',  emoji: '🚧' }
+};
+
+// ═══════════════════════════════════════════════════════
+// PURE UTILITIES
+// ═══════════════════════════════════════════════════════
+
+function fmtDate(date) {
+  return (date instanceof Date ? date : new Date(date))
+    .toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+}
+
+function uid() {
+  return `e${Date.now()}${Math.random().toString(36).slice(2, 6)}`;
+}
+
+// XSS-safe HTML escaping
+function esc(str) {
+  const d = document.createElement('div');
+  d.textContent = String(str ?? '');
+  return d.innerHTML;
+}
+
+function driftColor(score) {
+  if (score <= 30) return '#6ee7b7';
+  if (score <= 60) return '#fbbf24';
+  return '#f87171';
+}
+
+function driftLabel(score) {
+  if (score <= 30) return 'on track';
+  if (score <= 60) return 'drifting';
+  return 'off track';
+}
+
+// ═══════════════════════════════════════════════════════
+// DEMO DATA  (uses fmtDate — must come after it)
+// ═══════════════════════════════════════════════════════
+
+const DEMO = [
+  {
+    id: 'demo-1',
+    version: 'v0.0.1',
+    date: fmtDate(new Date(Date.now() - 2 * 86400000)),
+    summary: 'Deep dive into distributed systems — read and annotated the Dynamo paper',
+    tags: ['learning'],
+    changelog: [
+      'Read the Amazon Dynamo paper, focusing on consistent hashing and vector clocks',
+      'Took structured notes on CAP theorem tradeoffs and eventual consistency models',
+      'Set up a local Cassandra instance to test the theoretical concepts hands-on'
+    ],
+    drift_score: 18,
+    connections: []
+  },
+  {
+    id: 'demo-2',
+    version: 'v0.0.2',
+    date: fmtDate(new Date(Date.now() - 86400000)),
+    summary: 'Shipped a CLI scaffolding tool that cuts project setup from 40 min to under 2',
+    tags: ['building'],
+    changelog: [
+      'Built and shipped a CLI tool to scaffold new microservices with a single command',
+      'Reduced team project setup time from ~40 minutes to under 2 minutes',
+      'Pushed to internal tooling repo and sent team walkthrough in Slack'
+    ],
+    drift_score: 35,
+    connections: []
+  },
+  {
+    id: 'demo-3',
+    version: 'v0.0.3',
+    date: fmtDate(new Date()),
+    summary: 'Blocked on async vs sync architecture decision for the new ingestion pipeline',
+    tags: ['blocked', 'building'],
+    changelog: [
+      'Spent the morning stuck on the async vs sync architecture question — no resolution',
+      'Wrote a decision doc comparing both approaches but still not confident',
+      "Realized Dynamo's eventual consistency model from v0.0.1 is directly relevant here"
+    ],
+    drift_score: 62,
+    connections: ["v0.0.1: Dynamo's async replication pattern directly informs this architecture decision"]
+  }
+];
+
+// ═══════════════════════════════════════════════════════
+// VERSION  (pure)
+// ═══════════════════════════════════════════════════════
+
+const Version = {
+  parse(v) {
+    const m = String(v).match(/^v(\d+)\.(\d+)\.(\d+)$/);
+    return m ? [+m[1], +m[2], +m[3]] : null;
+  },
+
+  compare(a, b) {
+    const pa = this.parse(a), pb = this.parse(b);
+    if (!pa || !pb) return 0;
+    return (pa[0] - pb[0]) || (pa[1] - pb[1]) || (pa[2] - pb[2]);
+  },
+
+  next(entries) {
+    if (!entries.length) return 'v0.0.1';
+    const p = this.parse(entries[entries.length - 1].version);
+    return p ? `v${p[0]}.${p[1]}.${p[2] + 1}` : 'v0.0.1';
+  }
+};
+
+// ═══════════════════════════════════════════════════════
+// STORAGE
+// ═══════════════════════════════════════════════════════
+
+const Store = {
+  entries() {
+    try { return JSON.parse(localStorage.getItem(SK.ENTRIES)); }
+    catch { return null; }
+  },
+  saveEntries(e) {
+    try { localStorage.setItem(SK.ENTRIES, JSON.stringify(e)); return true; }
+    catch { return false; }
+  },
+  focus()      { return localStorage.getItem(SK.FOCUS)   || ''; },
+  saveFocus(f) { localStorage.setItem(SK.FOCUS, f); },
+  apiKey()     { return localStorage.getItem(SK.API_KEY) || ''; },
+  saveApiKey(k){ localStorage.setItem(SK.API_KEY, k); }
+};
+
+// ═══════════════════════════════════════════════════════
+// STREAKS  (pure)
+// ═══════════════════════════════════════════════════════
+
+function calcStreaks(entries) {
+  const counts = {};
+  entries.forEach(e => (e.tags || []).forEach(t => {
+    if (TAGS[t]) counts[t] = (counts[t] || 0) + 1;
+  }));
+  return Object.entries(counts).sort((a, b) => b[1] - a[1]);
+}
+
+// ═══════════════════════════════════════════════════════
+// CLAUDE API
+// ═══════════════════════════════════════════════════════
+
+const Claude = {
+  async _call(apiKey, messages) {
+    const res = await fetch(CLAUDE.ENDPOINT, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': apiKey,
+        'anthropic-version': CLAUDE.API_VERSION,
+        'anthropic-dangerous-direct-browser-access': 'true'
+      },
+      body: JSON.stringify({
+        model: CLAUDE.MODEL,
+        max_tokens: CLAUDE.MAX_TOKENS,
+        system: 'You are a personal growth structured logger.\nReturn ONLY valid JSON, no markdown, no explanation.',
+        messages
+      })
+    });
+
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({}));
+      throw new Error(body.error?.message || `HTTP ${res.status}`);
+    }
+
+    return (await res.json()).content[0].text;
+  },
+
+  _parse(raw) {
+    const text = raw.trim().replace(/^```json?\s*/i, '').replace(/```\s*$/i, '');
+    const d = JSON.parse(text);
+    if (typeof d.version !== 'string'   ||
+        typeof d.summary !== 'string'   ||
+        !Array.isArray(d.tags)          ||
+        !Array.isArray(d.changelog)     ||
+        typeof d.drift_score !== 'number' ||
+        !Array.isArray(d.connections)) {
+      throw new Error('invalid shape');
+    }
+    return d;
+  },
+
+  async structure(apiKey, text, focus, entries) {
+    const version = Version.next(entries);
+    const context = entries.slice(-7).map(({ version: v, summary, tags, date }) =>
+      ({ version: v, summary, tags, date }));
+
+    const prompt =
+`Weekly focus: ${focus || 'no specific focus this week'}
+
+Today's entry: ${text}
+
+Previous entries for context: ${JSON.stringify(context)}
+
+Return JSON:
+{
+  "version": "${version}",
+  "summary": "one clean sentence",
+  "tags": ["learning"|"building"|"social"|"health"|"blocked"],
+  "changelog": ["bullet 1", "bullet 2", "bullet 3"],
+  "drift_score": <integer 0-100, where 0=perfectly on focus, 100=completely off focus>,
+  "connections": ["v0.0.X: reason why connected"] or []
+}`;
+
+    const msgs = [{ role: 'user', content: prompt }];
+    let raw = await this._call(apiKey, msgs);
+    let parsed;
+
+    try {
+      parsed = this._parse(raw);
+    } catch {
+      // Retry with stricter prompt
+      raw = await this._call(apiKey, [
+        ...msgs,
+        { role: 'assistant', content: raw },
+        { role: 'user', content: 'Return ONLY the raw JSON object. No text before or after it.' }
+      ]);
+      parsed = this._parse(raw);
+    }
+
+    // Enforce invariants
+    parsed.version    = version;
+    parsed.drift_score = Math.max(0, Math.min(100, Math.round(+parsed.drift_score)));
+
+    return parsed;
+  }
+};
+
+// ═══════════════════════════════════════════════════════
+// RENDER
+// ═══════════════════════════════════════════════════════
+
+const Render = {
+  tag(name) {
+    const t = TAGS[name] || { color: '#888', bg: 'rgba(136,136,136,0.1)' };
+    return `<span class="tag" style="color:${t.color};background:${t.bg};border:1px solid ${t.color}25">${esc(name)}</span>`;
+  },
+
+  card(entry, delay = 0) {
+    const score    = entry.drift_score ?? 50;
+    const color    = driftColor(score);
+    const label    = driftLabel(score);
+    const tagsHtml = (entry.tags || []).map(t => this.tag(t)).join('');
+
+    const changelogHtml = (entry.changelog || []).map(item =>
+      `<div class="cl-item"><span class="cl-plus">+</span><span>${esc(item)}</span></div>`
+    ).join('');
+
+    const conns     = entry.connections || [];
+    const connsHtml = conns.length
+      ? `<div class="card-connections">${conns.map(c => {
+          const vm = c.match(/^(v\d+\.\d+\.\d+)/);
+          const tv = vm ? vm[1] : '';
+          return `<span class="conn-link" data-target="${esc(tv)}" title="${esc(c)}">🔗 ${esc(c)}</span>`;
+        }).join('')}</div>`
+      : '';
+
+    const el        = document.createElement('div');
+    el.className    = 'entry-card';
+    el.id           = `card-${entry.version.replace(/\./g, '-')}`;
+    el.dataset.version = entry.version;
+    el.style.animationDelay = `${delay}s`;
+    el.innerHTML = `
+      <div class="card-meta">
+        <span class="card-version">${esc(entry.version)}</span>
+        <span class="card-date">${esc(entry.date)}</span>
+      </div>
+      <p class="card-summary">${esc(entry.summary)}</p>
+      <div class="card-tags">${tagsHtml}</div>
+      <div class="drift-row">
+        <span class="drift-state">${esc(label)}</span>
+        <div class="drift-track">
+          <div class="drift-fill" style="width:${score}%;background:${color}"></div>
+        </div>
+        <span class="drift-num">${score}</span>
+      </div>
+      <div class="changelog">${changelogHtml}</div>
+      ${connsHtml}
+    `;
+    return el;
+  },
+
+  timeline(entries) {
+    const tl = document.getElementById('timeline');
+    const ct = document.getElementById('entryCount');
+    tl.innerHTML = '';
+
+    if (!entries.length) {
+      tl.innerHTML = '<div class="empty">no entries yet — push your first day</div>';
+      ct.textContent = '';
+      return;
+    }
+
+    ct.textContent = `${entries.length} ${entries.length === 1 ? 'entry' : 'entries'}`;
+
+    const sorted = [...entries].sort((a, b) => Version.compare(b.version, a.version));
+    sorted.forEach((entry, i) => tl.appendChild(this.card(entry, i * 0.04)));
+  },
+
+  streaks(entries) {
+    const el = document.getElementById('streaks');
+    const counts = calcStreaks(entries);
+    el.innerHTML = counts.length
+      ? counts.map(([tag, n]) => {
+          const t = TAGS[tag];
+          return `<span class="streak">
+            <span class="streak-emoji">${t.emoji}</span>
+            <span class="streak-label" style="color:${t.color}">${esc(tag)}</span>
+            <span class="streak-count">×${n}</span>
+          </span>`;
+        }).join('')
+      : '';
+  }
+};
+
+// ═══════════════════════════════════════════════════════
+// TOAST
+// ═══════════════════════════════════════════════════════
+
+let _toastTimer;
+
+function showToast(msg, isErr = false) {
+  const el = document.getElementById('toast');
+  clearTimeout(_toastTimer);
+  el.textContent = msg;
+  el.className   = `toast${isErr ? ' err' : ''}`;
+  void el.offsetWidth; // force reflow to restart transition
+  el.classList.add('show');
+  _toastTimer = setTimeout(() => el.classList.remove('show'), 3200);
+}
+
+// ═══════════════════════════════════════════════════════
+// APP
+// ═══════════════════════════════════════════════════════
+
+const App = {
+  entries: [],
+  apiPanelOpen: false,
+
+  init() {
+    const saved = Store.entries();
+    this.entries = saved !== null ? saved : [...DEMO];
+    if (saved === null) Store.saveEntries(this.entries);
+
+    document.getElementById('weeklyFocus').value = Store.focus();
+
+    const hasKey = Boolean(Store.apiKey());
+    if (hasKey) document.getElementById('apiKeyInput').value = Store.apiKey();
+    this._setApiPanel(!hasKey);
+
+    this._bindEvents();
+    Render.timeline(this.entries);
+    Render.streaks(this.entries);
+  },
+
+  _setApiPanel(open) {
+    this.apiPanelOpen = open;
+    document.getElementById('apiRow').style.display = open ? 'flex' : 'none';
+  },
+
+  _bindEvents() {
+    document.getElementById('settingsToggle').addEventListener('click', () => {
+      this._setApiPanel(!this.apiPanelOpen);
+    });
+
+    document.getElementById('weeklyFocus').addEventListener('input', e => {
+      Store.saveFocus(e.target.value.trim());
+    });
+
+    document.getElementById('saveApiKey').addEventListener('click', () => {
+      const key = document.getElementById('apiKeyInput').value.trim();
+      if (!key) return;
+      Store.saveApiKey(key);
+      this._setApiPanel(false);
+      showToast('API key saved');
+    });
+
+    document.getElementById('apiKeyInput').addEventListener('keydown', e => {
+      if (e.key === 'Enter') document.getElementById('saveApiKey').click();
+    });
+
+    document.getElementById('pushBtn').addEventListener('click', () => this._push());
+
+    document.getElementById('entryText').addEventListener('keydown', e => {
+      if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) this._push();
+    });
+
+    // Connection link navigation — event delegation
+    document.getElementById('timeline').addEventListener('click', e => {
+      const link = e.target.closest('.conn-link');
+      if (!link?.dataset.target) return;
+      const card = document.getElementById(`card-${link.dataset.target.replace(/\./g, '-')}`);
+      if (!card) return;
+      card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      card.classList.add('hl');
+      setTimeout(() => card.classList.remove('hl'), 1400);
+    });
+  },
+
+  async _push() {
+    const textarea = document.getElementById('entryText');
+    const btn      = document.getElementById('pushBtn');
+    const text     = textarea.value.trim();
+
+    if (!text) {
+      btn.classList.remove('shake');
+      requestAnimationFrame(() => {
+        btn.classList.add('shake');
+        btn.addEventListener('animationend', () => btn.classList.remove('shake'), { once: true });
+      });
+      return;
+    }
+
+    const apiKey = Store.apiKey();
+    if (!apiKey) {
+      this._setApiPanel(true);
+      document.getElementById('apiKeyInput').focus();
+      showToast('Enter your API key first', true);
+      return;
+    }
+
+    btn.disabled      = true;
+    textarea.disabled = true;
+    btn.textContent   = 'structuring your day...';
+
+    try {
+      const focus = Store.focus() || 'no specific focus this week';
+      const entry = await Claude.structure(apiKey, text, focus, this.entries);
+      entry.id   = uid();
+      entry.date = fmtDate(new Date());
+
+      this.entries.push(entry);
+      Store.saveEntries(this.entries);
+      Render.timeline(this.entries);
+      Render.streaks(this.entries);
+      textarea.value = '';
+      showToast(`${entry.version} pushed ✓`);
+    } catch (err) {
+      console.error(err);
+      showToast("couldn't reach AI — try again", true);
+    } finally {
+      btn.disabled      = false;
+      textarea.disabled = false;
+      btn.textContent   = 'Push today →';
+    }
+  }
+};
+
+document.addEventListener('DOMContentLoaded', () => App.init());
+</script>
+
+</body>
+</html>

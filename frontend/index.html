@@ -1,0 +1,520 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DailyDiff</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,600;1,400&family=Inter:wght@400;500&display=swap" rel="stylesheet" />
+  <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" crossorigin></script>
+  <script src="https://unpkg.com/@babel/standalone@7.23.10/babel.min.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #F5F0E8; --card: #FFFDF7; --text: #1A1A1A; --muted: #8A8070;
+      --accent: #C17D3C; --accent-hv: #A86A2C; --border: rgba(0,0,0,0.07);
+      --shadow: 0 2px 12px rgba(0,0,0,0.07); --serif: 'Lora', Georgia, serif;
+      --sans: 'Inter', system-ui, sans-serif; --radius: 10px;
+      --tag-learning-bg: #E8F0E8; --tag-learning-tx: #4A7C59;
+      --tag-building-bg: #E8EEF8; --tag-building-tx: #3A5A8C;
+      --tag-social-bg: #F5EAF0;   --tag-social-tx: #8C3A6A;
+      --tag-health-bg: #FFF0E8;   --tag-health-tx: #8C5A3A;
+      --tag-blocked-bg: #F5E8E8;  --tag-blocked-tx: #8C3A3A;
+      --tag-thinking-bg: #F0EEF5; --tag-thinking-tx: #5A4A8C;
+    }
+    html { font-size: 16px; scroll-behavior: smooth; }
+    body { background: var(--bg); color: var(--text); font-family: var(--sans); min-height: 100vh; line-height: 1.6; }
+    .page { max-width: 720px; margin: 0 auto; padding: 48px 24px 80px; }
+    .header { margin-bottom: 40px; }
+    .header h1 { font-family: var(--serif); font-size: 2rem; color: var(--accent); letter-spacing: -0.5px; line-height: 1.1; }
+    .header .subtitle { font-family: var(--serif); font-style: italic; color: var(--muted); font-size: 0.95rem; margin-top: 4px; }
+    .focus-row { margin-top: 20px; }
+    .focus-row label { display: block; font-size: 0.75rem; font-weight: 500; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 6px; }
+    .focus-input { width: 100%; background: transparent; border: none; border-bottom: 1.5px solid var(--border); padding: 6px 0; font-family: var(--sans); font-size: 0.95rem; color: var(--text); outline: none; transition: border-color 0.2s; }
+    .focus-input::placeholder { color: var(--muted); }
+    .focus-input:focus { border-color: var(--accent); }
+    .streak-row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
+    .streak-pill { font-size: 0.75rem; color: var(--muted); background: var(--card); border: 1px solid var(--border); border-radius: 20px; padding: 3px 10px; }
+    .input-section { margin-bottom: 40px; }
+    .input-section > label { display: block; font-family: var(--serif); font-size: 1rem; color: var(--muted); margin-bottom: 10px; }
+    textarea { width: 100%; min-height: 160px; background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; font-family: var(--sans); font-size: 0.95rem; color: var(--text); resize: vertical; outline: none; box-shadow: inset 0 2px 6px rgba(0,0,0,0.04); transition: border-color 0.2s, box-shadow 0.2s; line-height: 1.7; }
+    textarea::placeholder { color: var(--muted); }
+    textarea:focus { border-color: var(--accent); box-shadow: inset 0 2px 6px rgba(0,0,0,0.04), 0 0 0 3px rgba(193,125,60,0.1); }
+    textarea.shake { animation: shake 0.3s ease; }
+    @keyframes shake { 0%,100% { transform: translateX(0); } 25% { transform: translateX(-6px); } 75% { transform: translateX(6px); } }
+    .submit-btn { width: 100%; margin-top: 12px; padding: 14px; background: var(--accent); color: #fff; border: none; border-radius: var(--radius); font-family: var(--sans); font-size: 0.95rem; font-weight: 500; cursor: pointer; transition: background 0.2s, opacity 0.2s; }
+    .submit-btn:hover:not(:disabled) { background: var(--accent-hv); }
+    .submit-btn:disabled { opacity: 0.6; cursor: not-allowed; font-style: italic; }
+    .weekly-panel { margin-bottom: 32px; }
+    .weekly-toggle { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 12px 16px; font-family: var(--serif); font-size: 0.9rem; color: var(--accent); cursor: pointer; width: 100%; text-align: left; transition: border-color 0.2s; }
+    .weekly-toggle:hover { border-color: var(--accent); }
+    .weekly-content { background: var(--card); border: 1px solid var(--border); border-top: none; border-radius: 0 0 var(--radius) var(--radius); padding: 20px; }
+    .weekly-version { font-family: var(--sans); font-size: 0.75rem; color: var(--muted); font-weight: 500; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 6px; }
+    .weekly-summary-text { font-family: var(--serif); font-size: 1.05rem; margin-bottom: 16px; }
+    .weekly-section { margin-bottom: 12px; }
+    .weekly-section h4 { font-size: 0.75rem; font-weight: 500; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); margin-bottom: 6px; }
+    .weekly-section ul { list-style: none; padding: 0; }
+    .weekly-section li { font-size: 0.9rem; padding: 2px 0; color: var(--text); }
+    .weekly-section li::before { content: "— "; color: var(--muted); }
+    .weekly-pattern { font-family: var(--serif); font-style: italic; color: var(--muted); font-size: 0.9rem; margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--border); }
+    .timeline-header { font-size: 0.75rem; font-weight: 500; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); margin-bottom: 16px; }
+    .entry-card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 24px; margin-bottom: 16px; box-shadow: var(--shadow); animation: fadeUp 0.3s ease both; }
+    @keyframes fadeUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    .card-meta { display: flex; align-items: baseline; gap: 12px; margin-bottom: 10px; }
+    .card-version { font-family: 'Courier New', monospace; font-size: 0.78rem; color: var(--muted); font-weight: 600; }
+    .card-date { font-size: 0.78rem; color: var(--muted); }
+    .card-summary { font-family: var(--serif); font-size: 1.05rem; line-height: 1.5; margin-bottom: 12px; }
+    .tag-row { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 14px; }
+    .tag { font-size: 0.72rem; font-weight: 500; padding: 3px 9px; border-radius: 20px; letter-spacing: 0.02em; }
+    .tag-learning { background: var(--tag-learning-bg); color: var(--tag-learning-tx); }
+    .tag-building { background: var(--tag-building-bg); color: var(--tag-building-tx); }
+    .tag-social   { background: var(--tag-social-bg);   color: var(--tag-social-tx); }
+    .tag-health   { background: var(--tag-health-bg);   color: var(--tag-health-tx); }
+    .tag-blocked  { background: var(--tag-blocked-bg);  color: var(--tag-blocked-tx); }
+    .tag-thinking { background: var(--tag-thinking-bg); color: var(--tag-thinking-tx); }
+    .changelog-list { list-style: none; padding: 0; margin-bottom: 14px; }
+    .changelog-list li { font-size: 0.9rem; padding: 4px 0 4px 16px; position: relative; color: var(--text); line-height: 1.5; }
+    .changelog-list li::before { content: "·"; position: absolute; left: 4px; color: var(--accent); font-weight: 700; }
+    .drift-bar { height: 3px; background: var(--border); border-radius: 2px; margin-bottom: 14px; overflow: hidden; }
+    .drift-fill { height: 100%; border-radius: 2px; transition: width 0.6s ease; }
+    .connection-link { font-size: 0.82rem; color: var(--accent); margin-bottom: 12px; }
+    .connection-link::before { content: "→ "; }
+    .collapsible-section { margin-bottom: 8px; }
+    .collapsible-toggle { background: none; border: none; padding: 4px 0; font-family: var(--sans); font-size: 0.78rem; font-weight: 500; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); cursor: pointer; display: flex; align-items: center; gap: 6px; }
+    .collapsible-toggle .arrow { transition: transform 0.2s; font-style: normal; display: inline-block; }
+    .collapsible-toggle.open .arrow { transform: rotate(90deg); }
+    .collapsible-body { display: none; padding: 8px 0 4px; }
+    .collapsible-body.open { display: block; }
+    .collapsible-body ul { list-style: none; padding: 0; }
+    .collapsible-body li { font-size: 0.88rem; padding: 3px 0 3px 14px; position: relative; color: var(--text); }
+    .collapsible-body li::before { content: "–"; position: absolute; left: 0; color: var(--muted); }
+    .todo-item { display: flex; align-items: flex-start; gap: 8px; font-size: 0.88rem; padding: 3px 0; }
+    .todo-item input[type="checkbox"] { margin-top: 3px; accent-color: var(--accent); }
+    .card-actions { display: flex; justify-content: flex-end; margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--border); }
+    .notion-btn { font-size: 0.8rem; font-weight: 500; color: var(--accent); background: none; border: 1px solid var(--accent); border-radius: 6px; padding: 6px 14px; cursor: pointer; transition: background 0.2s, color 0.2s; }
+    .notion-btn:hover { background: var(--accent); color: #fff; }
+    .notion-btn.synced { color: var(--muted); border-color: var(--border); cursor: default; }
+    .notion-btn.synced:hover { background: none; color: var(--muted); }
+    #toast { position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%) translateY(20px); background: var(--text); color: var(--bg); padding: 10px 20px; border-radius: 8px; font-size: 0.85rem; opacity: 0; transition: opacity 0.3s, transform 0.3s; pointer-events: none; z-index: 100; white-space: nowrap; }
+    #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+    .empty-state { text-align: center; padding: 40px 0; color: var(--muted); font-family: var(--serif); font-style: italic; }
+    .tasks-section { margin-bottom: 40px; }
+    .tasks-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+    .tasks-title { font-size: 0.75rem; font-weight: 500; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); }
+    .tasks-filters { display: flex; gap: 6px; }
+    .filter-btn { font-size: 0.72rem; font-weight: 500; padding: 3px 10px; border-radius: 20px; border: 1px solid var(--border); background: none; color: var(--muted); cursor: pointer; transition: all 0.15s; }
+    .filter-btn.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+    .tasks-group { margin-bottom: 12px; }
+    .tasks-group-label { font-family: 'Courier New', monospace; font-size: 0.72rem; color: var(--muted); font-weight: 600; margin-bottom: 6px; }
+    .task-item { display: flex; align-items: flex-start; gap: 10px; padding: 8px 14px; background: var(--card); border: 1px solid var(--border); border-radius: 8px; margin-bottom: 6px; transition: opacity 0.2s; }
+    .task-item.done { opacity: 0.45; }
+    .task-item input[type="checkbox"] { margin-top: 3px; accent-color: var(--accent); flex-shrink: 0; }
+    .task-text { font-size: 0.9rem; color: var(--text); line-height: 1.5; }
+    .task-item.done .task-text { text-decoration: line-through; color: var(--muted); }
+    .task-picker { background: var(--card); border: 1px solid var(--accent); border-radius: var(--radius); padding: 16px; margin-top: 12px; }
+    .task-picker-title { font-size: 0.75rem; font-weight: 500; text-transform: uppercase; letter-spacing: 0.06em; color: var(--accent); margin-bottom: 10px; }
+    .task-picker-item { display: flex; align-items: flex-start; gap: 8px; padding: 5px 0; cursor: pointer; font-size: 0.9rem; color: var(--text); }
+    .task-picker-item input { margin-top: 3px; accent-color: var(--accent); }
+    .task-picker-actions { display: flex; gap: 10px; margin-top: 12px; }
+    .task-picker-confirm { padding: 7px 16px; background: var(--accent); color: #fff; border: none; border-radius: 6px; font-size: 0.85rem; font-weight: 500; cursor: pointer; }
+    .task-picker-confirm:hover { background: var(--accent-hv); }
+    .task-picker-skip { padding: 7px 12px; background: none; border: none; font-size: 0.85rem; color: var(--muted); cursor: pointer; }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+  <script type="text/babel">
+    const { useState, useEffect, useRef } = React;
+    const API = '';
+
+    function useToast() {
+      const [toast, setToast] = useState({ msg: '', show: false });
+      const timer = useRef(null);
+      const show = (msg) => {
+        clearTimeout(timer.current);
+        setToast({ msg, show: true });
+        timer.current = setTimeout(() => setToast(t => ({ ...t, show: false })), 3500);
+      };
+      return [toast, show];
+    }
+
+    function Toast({ toast }) {
+      return <div id="toast" className={toast.show ? 'show' : ''}>{toast.msg}</div>;
+    }
+
+    function Collapsible({ title, count, children, initialOpen = false }) {
+      const [open, setOpen] = useState(initialOpen);
+      return (
+        <div className="collapsible-section">
+          <button className={`collapsible-toggle ${open ? 'open' : ''}`} onClick={() => setOpen(o => !o)}>
+            <span className="arrow">▶</span> {title} ({count})
+          </button>
+          <div className={`collapsible-body ${open ? 'open' : ''}`}>{children}</div>
+        </div>
+      );
+    }
+
+    function ActionItem({ text, entry, onAddTask }) {
+      const [added, setAdded] = useState(false);
+      async function add() {
+        if (added) return;
+        await onAddTask(entry.id, entry.version, text);
+        setAdded(true);
+      }
+      return (
+        <div className="todo-item">
+          <span style={{ flex: 1 }}>{text}</span>
+          <button className={`add-task-btn ${added ? 'added' : ''}`} onClick={add}>
+            {added ? '✓ added' : '+ task'}
+          </button>
+        </div>
+      );
+    }
+
+    function EntryCard({ entry, onAddTask }) {
+      const date = new Date(entry.created_at + 'Z');
+      const dateStr = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+      const driftColor = entry.drift_score >= 60 ? 'var(--accent)' : entry.drift_score >= 35 ? '#C8975A' : '#B05050';
+
+      return (
+        <div className="entry-card">
+          <div className="card-meta">
+            <span className="card-version">{entry.version}</span>
+            <span className="card-date">{dateStr}</span>
+          </div>
+          <div className="card-summary">{entry.summary}</div>
+          <div className="tag-row">
+            {(entry.tags || []).map(t => <span key={t} className={`tag tag-${t}`}>{t}</span>)}
+          </div>
+          <ul className="changelog-list">
+            {(entry.changelog || []).map((c, i) => <li key={i}>{c}</li>)}
+          </ul>
+          <div className="drift-bar">
+            <div className="drift-fill" style={{ width: `${entry.drift_score}%`, background: driftColor }} />
+          </div>
+          {(entry.connections || []).map((c, i) => <div key={i} className="connection-link">{c}</div>)}
+          {entry.key_ideas?.length > 0 && (
+            <Collapsible title="Key Ideas" count={entry.key_ideas.length}>
+              <ul>{entry.key_ideas.map((x, i) => <li key={i}>{x}</li>)}</ul>
+            </Collapsible>
+          )}
+          {entry.open_questions?.length > 0 && (
+            <Collapsible title="Open Questions" count={entry.open_questions.length}>
+              <ul>{entry.open_questions.map((x, i) => <li key={i}>{x}</li>)}</ul>
+            </Collapsible>
+          )}
+          {entry.action_items?.length > 0 && (
+            <Collapsible title="Action Items" count={entry.action_items.length}>
+              {entry.action_items.map((x, i) => (
+                <div key={i} className="todo-item"><span>{x}</span></div>
+              ))}
+            </Collapsible>
+          )}
+        </div>
+      );
+    }
+
+    function WeeklyPanel() {
+      const [open, setOpen] = useState(false);
+      const [data, setData] = useState(null);
+      const [loading, setLoading] = useState(false);
+
+      const toggle = async () => {
+        const next = !open;
+        setOpen(next);
+        if (next && !data) {
+          setLoading(true);
+          try {
+            const r = await fetch(`${API}/weekly-summary`);
+            if (r.ok) setData(await r.json());
+          } finally {
+            setLoading(false);
+          }
+        }
+      };
+
+      return (
+        <div className="weekly-panel">
+          <button className="weekly-toggle" onClick={toggle}>
+            This week → <span>{open ? 'hide' : 'show summary'}</span>
+          </button>
+          {open && (
+            <div className="weekly-content">
+              {loading ? (
+                <p style={{ color: 'var(--muted)', fontSize: '0.9rem', fontStyle: 'italic' }}>Loading…</p>
+              ) : data ? (
+                <>
+                  <div className="weekly-version">{data.week_version}</div>
+                  <div className="weekly-summary-text">{data.summary}</div>
+                  <div className="weekly-section">
+                    <h4>Highlights</h4>
+                    <ul>{data.highlights.map((h, i) => <li key={i}>{h}</li>)}</ul>
+                  </div>
+                  {data.blockers.length > 0 && (
+                    <div className="weekly-section">
+                      <h4>Blockers</h4>
+                      <ul>{data.blockers.map((b, i) => <li key={i}>{b}</li>)}</ul>
+                    </div>
+                  )}
+                  <div className="weekly-pattern">{data.pattern}</div>
+                </>
+              ) : (
+                <p style={{ color: 'var(--muted)', fontSize: '0.9rem' }}>No entries this week yet.</p>
+              )}
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    function TasksSection() {
+      const [todos, setTodos] = useState([]);
+      const [filter, setFilter] = useState('open');
+
+      useEffect(() => { loadTodos(); }, []);
+
+      async function loadTodos() {
+        try {
+          const r = await fetch(`${API}/todos`);
+          if (r.ok) setTodos(await r.json());
+        } catch (_) {}
+      }
+
+      async function toggle(todo) {
+        try {
+          const r = await fetch(`${API}/todos/${todo.id}`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ completed: !todo.completed }),
+          });
+          if (r.ok) {
+            const updated = await r.json();
+            setTodos(prev => prev.map(t => t.id === todo.id ? updated : t));
+          }
+        } catch (_) {}
+      }
+
+      const filtered = todos.filter(t =>
+        filter === 'all' ? true : filter === 'open' ? !t.completed : t.completed
+      );
+
+      const groups = filtered.reduce((acc, t) => {
+        (acc[t.entry_version] = acc[t.entry_version] || []).push(t);
+        return acc;
+      }, {});
+
+      return (
+        <div className="tasks-section">
+          <div className="tasks-header">
+            <span className="tasks-title">Tasks</span>
+            <div className="tasks-filters">
+              {['open', 'done', 'all'].map(f => (
+                <button key={f} className={`filter-btn ${filter === f ? 'active' : ''}`} onClick={() => setFilter(f)}>
+                  {f}
+                </button>
+              ))}
+            </div>
+          </div>
+          {Object.keys(groups).length === 0 ? (
+            <div className="empty-state">No tasks yet — they'll appear from your entries.</div>
+          ) : (
+            Object.entries(groups).map(([version, items]) => (
+              <div key={version} className="tasks-group">
+                <div className="tasks-group-label">{version}</div>
+                {items.map(t => (
+                  <div key={t.id} className={`task-item ${t.completed ? 'done' : ''}`}>
+                    <input type="checkbox" checked={t.completed} onChange={() => toggle(t)} />
+                    <span className="task-text">{t.text}</span>
+                  </div>
+                ))}
+              </div>
+            ))
+          )}
+        </div>
+      );
+    }
+
+    function App() {
+      const [entries, setEntries] = useState([]);
+      const [rawText, setRawText] = useState('');
+      const [focus, setFocus] = useState('');
+      const [submitting, setSubmitting] = useState(false);
+      const [tokenCount, setTokenCount] = useState(0);
+      const [shake, setShake] = useState(false);
+      const [toast, showToast] = useToast();
+      const focusTimer = useRef(null);
+
+      useEffect(() => {
+        fetch(`${API}/settings/weekly-focus`)
+          .then(r => r.ok ? r.json() : null)
+          .then(d => { if (d?.value) setFocus(d.value); })
+          .catch(() => {});
+        loadEntries();
+      }, []);
+
+      async function loadEntries() {
+        try {
+          const r = await fetch(`${API}/entries`);
+          if (!r.ok) throw new Error();
+          setEntries(await r.json());
+        } catch (_) {
+          showToast("Can't reach server — is it running?");
+        }
+      }
+
+      function onFocusChange(e) {
+        setFocus(e.target.value);
+        clearTimeout(focusTimer.current);
+        focusTimer.current = setTimeout(async () => {
+          try {
+            await fetch(`${API}/settings/weekly-focus`, {
+              method: 'PUT',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ value: e.target.value }),
+            });
+          } catch (_) {}
+        }, 800);
+      }
+
+      async function submitEntry() {
+        const text = rawText.trim();
+        if (!text) {
+          setShake(true);
+          setTimeout(() => setShake(false), 400);
+          return;
+        }
+        setSubmitting(true);
+        setTokenCount(0);
+        try {
+          const response = await fetch(`${API}/entry/stream`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ raw_text: text }),
+          });
+          if (!response.ok) throw new Error();
+
+          const reader = response.body.getReader();
+          const decoder = new TextDecoder();
+          let buffer = '';
+
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            buffer += decoder.decode(value, { stream: true });
+            const lines = buffer.split('\n');
+            buffer = lines.pop();
+            for (const line of lines) {
+              if (!line.startsWith('data: ')) continue;
+              const data = JSON.parse(line.slice(6));
+              if (data.t !== undefined) {
+                setTokenCount(c => c + 1);
+              } else if (data.done) {
+                setRawText('');
+                await loadEntries();
+                showToast(`${data.entry.version} saved`);
+              } else if (data.error) {
+                throw new Error(data.error);
+              }
+            }
+          }
+        } catch (_) {
+          showToast("AI couldn't process this — try again");
+        } finally {
+          setSubmitting(false);
+          setTokenCount(0);
+        }
+      }
+
+      function toggleTaskSelection(text) {
+        setSelectedTasks(prev => {
+          const next = new Set(prev);
+          next.has(text) ? next.delete(text) : next.add(text);
+          return next;
+        });
+      }
+
+      async function confirmTasks() {
+        for (const text of selectedTasks) {
+          await addTask(pendingEntry.id, pendingEntry.version, text);
+        }
+        setPendingEntry(null);
+        setSelectedTasks(new Set());
+      }
+
+      async function addTask(entryId, entryVersion, text) {
+        try {
+          await fetch(`${API}/todos`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ entry_id: entryId, entry_version: entryVersion, text }),
+          });
+        } catch (_) {}
+      }
+
+const cutoff = Date.now() - 7 * 86400000;
+      const streakCounts = {};
+      entries
+        .filter(e => new Date(e.created_at + 'Z').getTime() >= cutoff)
+        .forEach(e => (e.tags || []).forEach(t => { streakCounts[t] = (streakCounts[t] || 0) + 1; }));
+
+      return (
+        <div className="page">
+          <header className="header">
+            <h1>DailyDiff</h1>
+            <p className="subtitle">Your thoughts, structured.</p>
+            <div className="focus-row">
+              <label htmlFor="weekly-focus">Weekly focus</label>
+              <input
+                id="weekly-focus"
+                className="focus-input"
+                type="text"
+                placeholder="What are you focused on this week?"
+                value={focus}
+                onChange={onFocusChange}
+                autoComplete="off"
+              />
+            </div>
+            <div className="streak-row">
+              {Object.entries(streakCounts).sort((a, b) => b[1] - a[1]).map(([tag, n]) => (
+                <span key={tag} className="streak-pill">🔥 {tag} · {n}d</span>
+              ))}
+            </div>
+          </header>
+
+          <section className="input-section">
+            <label htmlFor="raw-input">What happened today?</label>
+            <textarea
+              id="raw-input"
+              className={shake ? 'shake' : ''}
+              placeholder="Dump it all here — what you worked on, what you learned, what's stuck, what you're thinking about. Don't filter it."
+              value={rawText}
+              onChange={e => setRawText(e.target.value)}
+            />
+            <button className="submit-btn" disabled={submitting} onClick={submitEntry}>
+              {submitting ? `thinking… (${tokenCount})` : 'Structure my notes →'}
+            </button>
+          </section>
+
+          <WeeklyPanel />
+
+          <TasksSection />
+
+          <div className="timeline-header">Entry log</div>
+          <div>
+            {entries.length === 0
+              ? <div className="empty-state">No entries yet — write something.</div>
+              : entries.map(e => <EntryCard key={e.id} entry={e} onAddTask={addTask} />)
+            }
+          </div>
+
+          <Toast toast={toast} />
+        </div>
+      );
+    }
+
+    ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+  </script>
+</body>
+</html>
